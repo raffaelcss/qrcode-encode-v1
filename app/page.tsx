@@ -11,10 +11,10 @@ import {
 import { useState } from 'react'
 
 export default function Home() {
-  const [qrProportion, setQrProportion] = useState(10)
   const [qrVersion, setQrVersion] = useState(2)
   const [qrErrorLevel, setQrErrorLevel] = useState(0)
   const [dataMaskPattern, setDataMaskPattern] = useState(6)
+  const [dataToEncode, setDataToEncode] = useState("Raffael")
 
   const handleChange = (event: SelectChangeEvent) => {
     setQrErrorLevel(parseInt(event.target.value))
@@ -22,24 +22,9 @@ export default function Home() {
 
   return (
     <div className="flex h-screen w-screen justify-center overflow-auto bg-slate-800">
-      <div className="w-400 flex items-center bg-slate-300">
-        <div className="flex w-48 flex-col items-center gap-2 p-4">
-          <div className="w-28">
-            <TextField
-              id="QRProportionInput"
-              label="Proportion"
-              variant="outlined"
-              size="small"
-              value={qrProportion}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                const proportion = parseInt(event.target.value) || qrProportion
-                if (proportion > 0 && proportion <= 10) {
-                  setQrProportion(proportion)
-                }
-              }}
-            />
-          </div>
-          <div className="w-28">
+      <div className="flex w-screen items-center justify-evenly bg-slate-200 gap-4">
+        <div className="flex rounded bg-white flex-col items-center gap-2 p-6">
+          <div className="w-52">
             <TextField
               id="QRversionInput"
               label="Version"
@@ -54,7 +39,7 @@ export default function Home() {
               }}
             />
           </div>
-          <FormControl className="w-28">
+          <FormControl className="w-52">
             <InputLabel id="demo-simple-select-label">Error Level</InputLabel>
             <Select
               labelId="demo-simple-select-label"
@@ -70,7 +55,7 @@ export default function Home() {
               <MenuItem value={2}>H</MenuItem>
             </Select>
           </FormControl>
-          <div className="w-28">
+          <div className="w-52">
             <TextField
               id="QRmaskInput"
               label="Mask"
@@ -85,13 +70,27 @@ export default function Home() {
               }}
             />
           </div>
+          <div className="w-52">
+            <TextField
+              id="dataToEncode"
+              label="Texto"
+              variant="outlined"
+              multiline
+              fullWidth
+              minRows={5}
+              value={dataToEncode}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                setDataToEncode(event.target.value)
+              }}
+            />
+          </div>
         </div>
-        <div className="flex w-full items-center justify-center p-5">
+        <div className="flex size-[36rem] items-center justify-center p-4">
           <QrCodeComponent
             qrVersion={qrVersion}
-            proportion={qrProportion}
             errorLevel={qrErrorLevel}
             dataMaskPattern={dataMaskPattern}
+            dataToEncode={dataToEncode}
           />
         </div>
       </div>

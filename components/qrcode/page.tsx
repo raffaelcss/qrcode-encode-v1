@@ -1,8 +1,8 @@
 interface QrCodeComponentProps {
   qrVersion: number
-  proportion: number
   errorLevel: number
   dataMaskPattern: number
+  dataToEncode: string
 }
 
 /*****************************************/
@@ -80,59 +80,12 @@ function getErrorCorrectionCodewords(
   return errorCorrectionCodewords[version - 1][errorLevel]
 }
 
-function getValueOfP(version: number, errorLevel: number): number {
-  const valueOfP = [
-    [3, 2, 1, 1], // Versão 1
-    [2, 0, 0, 0], // Versão 2
-    [1, 0, 1, 1], // Versão 3
-    [0, 1, 2, 2], // Versão 4
-    [0, 1, 2, 2], // Versão 5
-    [0, 2, 4, 4], // Versão 6
-    [0, 2, 4, 4], // Versão 7
-    [0, 2, 4, 4], // Versão 8
-    [0, 2, 4, 4], // Versão 9
-    [0, 2, 6, 6], // Versão 10
-    [0, 4, 4, 4], // Versão 11
-    [0, 2, 6, 7], // Versão 12
-    [0, 4, 8, 8], // Versão 13
-    [0, 3, 11, 11], // Versão 14
-    [0, 5, 13, 13], // Versão 15
-    [0, 5, 15, 17], // Versão 16
-    [0, 1, 15, 17], // Versão 17
-    [0, 5, 17, 19], // Versão 18
-    [0, 3, 17, 19], // Versão 19
-    [0, 3, 13, 15], // Versão 20
-    [0, 4, 16, 19], // Versão 21
-    [0, 2, 7, 7], // Versão 22
-    [0, 4, 11, 16], // Versão 23
-    [0, 6, 14, 14], // Versão 24
-    [0, 8, 13, 22], // Versão 25
-    [0, 10, 19, 19], // Versão 26
-    [0, 8, 26, 28], // Versão 27
-    [0, 3, 4, 11], // Versão 28
-    [0, 7, 21, 31], // Versão 29
-    [0, 5, 25, 25], // Versão 30
-    [0, 13, 29, 23], // Versão 31
-    [0, 17, 10, 35], // Versão 32
-    [0, 17, 19, 46], // Versão 33
-    [0, 13, 23, 59], // Versão 34
-    [0, 12, 14, 22], // Versão 35
-    [0, 6, 10, 2], // Versão 36
-    [0, 17, 24, 46], // Versão 37
-    [0, 4, 32, 32], // Versão 38
-    [0, 20, 22, 10], // Versão 39
-    [0, 19, 34, 20], // Versão 40
-  ]
-  // Verificar se o nível está no intervalo válido (0 a 3)
-  if (errorLevel < 0 || errorLevel > 3) {
-    return -1
-  }
-  // Verificar se a versão está dentro do intervalo válido (1 a 40)
-  if (version < 1 || version > valueOfP.length) {
-    return -1
-  }
-  return valueOfP[version - 1][errorLevel]
-}
+// function getValueOfP(version: number, errorLevel: number): number {
+//   if (version == 1){
+//     s
+//   }
+//   return 0
+// }
 
 function getErrorCorrectionBlocks(version: number, errorLevel: number): number {
   const errorCorrectionBlocks = [
@@ -189,6 +142,47 @@ function getErrorCorrectionBlocks(version: number, errorLevel: number): number {
   return errorCorrectionBlocks[version - 1][errorLevel]
 }
 
+function getQRCodeSize(qrVersion: number) {
+  return 4 * qrVersion + 17
+}
+
+function getFixedPatternsSize(version: number) {
+  let response = 0
+  // Localização
+  response += 8 * 8 * 3
+  // Time
+  response += (version * 4 + 1) * 2
+  // Alinhamento
+  const alignmentPatternPositions = getAlignmentPatternPositions(version)
+  if (alignmentPatternPositions.length > 0){
+    response += ((alignmentPatternPositions.length ** 2) - 3) * 5 * 5
+    // Alinhamentos em cima do time 
+    response -= Math.floor(version / 7) * 2 * 5
+  }
+  return response
+}
+
+function getFormatInfoSize(version: number){
+  let response = 0
+  // version
+  if (version >= 7)
+    response += 18 * 2
+  // info
+  response += 15 * 2 + 1
+
+  return response
+}
+
+function getDataModuleExceptSize(version: number){
+  const A2 = getQRCodeSize(version) ** 2
+
+  return A2 - getFixedPatternsSize(version) - getFormatInfoSize(version)
+}
+
+function getRemainderBits(version: number) {
+  return getDataModuleExceptSize(version) - (getTotalNumberOfCodewords(version) * 8) 
+}
+
 // Função para fazer uma cópia profunda de um array bidimensional
 function arrayDeepCopy(array: number[][]): number[][] {
   return array.map((row) => [...row]) // Copia cada linha do array
@@ -233,10 +227,6 @@ function polyRemainder(cima: number, baixo: number): number {
   const remainder = cimaCopy
 
   return remainder
-}
-
-function getQRCodeSize(qrVersion: number) {
-  return 4 * qrVersion + 17
 }
 
 function stringToAscii(str: string): number[] {
@@ -648,12 +638,7 @@ function snake(data: number[][], qrVersion: number, content: number[]) {
   }
 }
 
-function mask(
-  data: number[][],
-  fix: number[][],
-  qrVersion: number,
-  dataMaskPattern: number
-) {
+function mask(data: number[][], fix: number[][], dataMaskPattern: number) {
   for (let i = 0; i < data.length; i++) {
     for (let j = 0; j < data[i].length; j++) {
       let invert = false
@@ -695,8 +680,7 @@ function mask(
 }
 
 export default function QrCodeComponent(props: QrCodeComponentProps) {
-  const { qrVersion, proportion, errorLevel, dataMaskPattern } = props
-  const quietZoneSize = 4 * proportion
+  const { qrVersion, errorLevel, dataMaskPattern, dataToEncode } = props
   const size = getQRCodeSize(qrVersion)
 
   // [x][y]
@@ -713,47 +697,36 @@ export default function QrCodeComponent(props: QrCodeComponentProps) {
   formatInformation(data, qrVersion, errorLevel, dataMaskPattern)
   versionInformation(data, qrVersion)
 
-  const finalData: number[] = getFinalData(qrVersion, 4, 'Raffael Christopher')
+  const finalData: number[] = getFinalData(qrVersion, 4, dataToEncode)
 
   const fix = arrayDeepCopy(data)
   snake(data, qrVersion, finalData)
-  mask(data, fix, qrVersion, dataMaskPattern)
+  // mask(data, fix, dataMaskPattern)
 
   return (
-    <div
-      id="quiet-zone"
-      style={{ padding: quietZoneSize }}
-      className={`flex bg-white`}
-    >
-      <div
-        id="encoding-zone"
-        style={{ height: size * proportion, width: size * proportion }}
-        className={`flex bg-emerald-500`}
-      >
-        {data.map((col, i) => (
-          <div
-            style={{ height: size * proportion, width: proportion }}
-            key={i}
-            className="flex flex-col bg-black text-xs"
-          >
-            {col.map((bit, j) => (
-              <div
-                style={{ height: proportion, width: proportion, fontSize: 6 }}
-                className={`text-center ${
-                  bit == 1
-                    ? 'bg-black text-white'
-                    : bit == 0
-                      ? 'bg-white'
-                      : 'bg-slate-400'
-                }`}
-                key={j}
-              >
-                {/* bit */}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
+    <div id="qr-code" className="flex size-[32rem] bg-white">
+      <div className="quiet-zone flex-[4_4_0%]"/>
+      {data.map((col, i) => (
+        <div key={i} className="flex flex-1 flex-col text-xs">
+          <div className="quiet-zone flex-[4_4_0%]"/>
+          {col.map((bit, j) => (
+            <div
+              className={`flex-1 text-center ${
+                bit == 1
+                  ? 'bg-black text-white'
+                  : bit == 0
+                    ? 'bg-white'
+                    : 'bg-slate-400'
+              }`}
+              key={j}
+            >
+              {/* bit */}
+            </div>
+          ))}
+          <div className="quiet-zone flex-[4_4_0%]"/>
+        </div>
+      ))}
+      <div className="quiet-zone flex-[4_4_0%]"/>
     </div>
   )
 }
