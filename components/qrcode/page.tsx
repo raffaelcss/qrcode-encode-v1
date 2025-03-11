@@ -1,4 +1,7 @@
+import { QREncodeModeType } from "@/types/qrMode-type"
+
 interface QrCodeComponentProps {
+  encodeMode: QREncodeModeType
   qrVersion: number
   errorLevel: number
   dataMaskPattern: number
@@ -80,12 +83,18 @@ function getErrorCorrectionCodewords(
   return errorCorrectionCodewords[version - 1][errorLevel]
 }
 
-// function getValueOfP(version: number, errorLevel: number): number {
-//   if (version == 1){
-//     s
-//   }
-//   return 0
-// }
+function getValueOfP(version: number, errorLevel: number): number {
+  if (version == 1){
+    if (errorLevel == 1) return 3   //L
+    if (errorLevel == 0) return 2   //M
+    if (errorLevel == 3) return 1   //Q
+    if (errorLevel == 2) return 1   //H
+  }
+  if (version == 2 && errorLevel == 1) return 2   //L
+  if (version == 3 && errorLevel == 1) return 1   //L
+
+  return 0
+}
 
 function getErrorCorrectionBlocks(version: number, errorLevel: number): number {
   const errorCorrectionBlocks = [
@@ -534,12 +543,7 @@ function getNumberOfBitsCharacterCount(version: number, mode: number): number {
       return 13
     case 4:
       if (version <= 9) return 8
-      if (version <= 26) return 16
       return 16
-    case 8:
-      if (version <= 9) return 8
-      if (version <= 26) return 10
-      return 12
     default:
       return 0
   }
@@ -569,10 +573,11 @@ function getHeaderBits(version: number, mode: number, text: string): number[] {
 /*                                       */
 /*****************************************/
 
-function getFinalData(version: number, mode: number, text: string): number[] {
+function getFinalData(version: number, encodeMode: QREncodeModeType, text: string): number[] {
   let result: number[] = []
   let data: number[] = []
-  const header: number[] = getHeaderBits(version, mode, text)
+  const encodeModeIndex = encodeMode == QREncodeModeType.NUMERIC ? 1 : (encodeMode == QREncodeModeType.ALPHANUMERIC ? 2 : 4)
+  const header: number[] = getHeaderBits(version, encodeModeIndex, text)
   const ascii: number[] = stringToAscii(text)
   const terminator: number[] = new Array(4).fill(0)
 
@@ -587,12 +592,12 @@ function getFinalData(version: number, mode: number, text: string): number[] {
   header.forEach((bit) => {
     result.push(bit)
   })
-  data.forEach((bit) => {
-    result.push(bit)
-  })
-  terminator.forEach((bit) => {
-    result.push(bit)
-  })
+  // data.forEach((bit) => {
+  //   result.push(bit)
+  // })
+  // terminator.forEach((bit) => {
+  //   result.push(bit)
+  // })
 
   return result
 }
@@ -680,7 +685,7 @@ function mask(data: number[][], fix: number[][], dataMaskPattern: number) {
 }
 
 export default function QrCodeComponent(props: QrCodeComponentProps) {
-  const { qrVersion, errorLevel, dataMaskPattern, dataToEncode } = props
+  const { encodeMode, qrVersion, errorLevel, dataMaskPattern, dataToEncode } = props
   const size = getQRCodeSize(qrVersion)
 
   // [x][y]
@@ -694,10 +699,10 @@ export default function QrCodeComponent(props: QrCodeComponentProps) {
   timingPatterns(data, qrVersion)
   findPatterns(data, qrVersion)
   alignmentsPatterns(data, qrVersion, alignments)
-  formatInformation(data, qrVersion, errorLevel, dataMaskPattern)
-  versionInformation(data, qrVersion)
+  // formatInformation(data, qrVersion, errorLevel, dataMaskPattern)
+  // versionInformation(data, qrVersion)
 
-  const finalData: number[] = getFinalData(qrVersion, 4, dataToEncode)
+  const finalData: number[] = getFinalData(qrVersion, encodeMode, dataToEncode)
 
   const fix = arrayDeepCopy(data)
   snake(data, qrVersion, finalData)
