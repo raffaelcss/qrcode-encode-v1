@@ -29,14 +29,8 @@ export function getHeaderBits(version: number, encodeMode: QREncodeModeType, tex
   return result
 }
 
-export function getInitialBits(text: string, qrErrorLevel: ErrorCorrectionType): number[] {
-  const version = getMinimumQRVersion(text, qrErrorLevel);
-  const qrEncodeMode = determineQREncodeMode(text);
-  const headerBits = getHeaderBits(version || 1, qrEncodeMode, text);
-  const qtdFinalBits = getTotalNumberOfDataCodewords(version, qrErrorLevel) * 8;
-
+export function encodeText(text: string, qrEncodeMode: QREncodeModeType){
   const encodedText : number[] = [];
-  
   switch (qrEncodeMode) {
     case QREncodeModeType.NUMERIC:
       encodedText.push(...encodeNumericMode(text))
@@ -49,6 +43,17 @@ export function getInitialBits(text: string, qrErrorLevel: ErrorCorrectionType):
       encodedText.push(...encodeByteMode(text))
       break;
   }
+
+  return encodedText;
+}
+
+export function getInitialBits(text: string, qrErrorLevel: ErrorCorrectionType): number[] {
+  const version = getMinimumQRVersion(text, qrErrorLevel);
+  const qrEncodeMode = determineQREncodeMode(text);
+  const headerBits = getHeaderBits(version || 1, qrEncodeMode, text);
+  const qtdFinalBits = getTotalNumberOfDataCodewords(version, qrErrorLevel) * 8;
+
+  const encodedText = [...encodeText(text, qrEncodeMode)];
 
   const finalBits = [...headerBits, ...encodedText];
 

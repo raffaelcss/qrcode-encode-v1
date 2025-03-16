@@ -3,9 +3,9 @@ import QrCodeComponent from '@/components/qrcode/page'
 import { ErrorCorrectionType } from '@/types/errorCorrection-type'
 import { QREncodeModeType } from '@/types/qrMode-type'
 import { determineQREncodeMode } from '@/utils/determineQREncodeMode'
-import { getTotalNumberOfDataCodewords } from '@/utils/extras/blockInformations'
-import { getHeaderBits, getInitialBits } from '@/utils/getInitialBits'
+import { getHeaderBits } from '@/utils/getInitialBits'
 import { getMinimumQRVersion } from '@/utils/getMinimumQRVersion'
+import { getErrorCorrectionCodewords } from '@/utils/extras/getLongDivisionMod'
 import {
   FormControl,
   InputLabel,
@@ -14,19 +14,44 @@ import {
   SelectChangeEvent,
   TextField,
 } from '@mui/material'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { divideCodewordsInBlocks } from '@/utils/extras/divideCodewordsInBlocks'
+import { getGeneratorPolynomial } from '@/utils/extras/getGeneratorPolynomial'
+import { getMessagePolynomial } from '@/utils/extras/getMessagePolynomial'
+import { getEcCodewordsPerBlock } from '@/utils/extras/blockInformations'
 
 export default function Home() {
   const [encodeMode, setEncodeMode] = useState(QREncodeModeType.BYTE)
-  const [qrVersion, setQrVersion] = useState(2)
+  const [qrVersion, setQrVersion] = useState(1)
   const [qrErrorLevel, setQrErrorLevel] = useState(ErrorCorrectionType.M)
   const [dataMaskPattern, setDataMaskPattern] = useState(6)
-  const [dataToEncode, setDataToEncode] = useState('Raffael')
+  const [dataToEncode, setDataToEncode] = useState('HELLO WORLD')
 
   const handleChange = (event: SelectChangeEvent) => {
     setQrErrorLevel(parseInt(event.target.value))
   }
 
+  useEffect(() => {
+    //Seleciona versão
+    setQrVersion(getMinimumQRVersion(dataToEncode, qrErrorLevel));
+    setEncodeMode(determineQREncodeMode(dataToEncode));
+  },[dataToEncode]);
+
+  const messagePolynomial = getMessagePolynomial(dataToEncode, qrErrorLevel);
+  const numErrorCorrectionCodewords = getEcCodewordsPerBlock(qrVersion, qrErrorLevel);
+  const generatorPolynomial = getGeneratorPolynomial(numErrorCorrectionCodewords);
+  
+  const messageGroups = divideCodewordsInBlocks(qrVersion, qrErrorLevel, messagePolynomial);
+
+  const ecGroups: number[][][] = [];
+  messageGroups.forEach(group => {
+    const ecGroup: number[][] = [];
+    group.forEach(block => {
+      const ecBlock = getErrorCorrectionCodewords(block, generatorPolynomial, numErrorCorrectionCodewords)
+      ecGroup.push(ecBlock);
+    })
+    ecGroups.push(ecGroup);
+  })
   return (
     <div className="flex h-screen w-screen justify-center overflow-auto bg-slate-800">
       <div className="flex w-screen items-center justify-evenly gap-4 bg-slate-200">
@@ -87,8 +112,7 @@ export default function Home() {
               minRows={5}
               value={dataToEncode}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                setDataToEncode(event.target.value)
-                setEncodeMode(determineQREncodeMode(event.target.value))
+                setDataToEncode(event.target.value);
               }}
             />
           </div>
@@ -102,25 +126,30 @@ export default function Home() {
               {qrErrorLevel})
             </div>
             <div>
-              QR min version: {getMinimumQRVersion(dataToEncode, qrErrorLevel)}
+              QR min version: {qrVersion}
             </div>
             <div>
               Header:{' '}
               {getHeaderBits(
-                getMinimumQRVersion(dataToEncode, qrErrorLevel) || 1,
+                qrVersion,
                 encodeMode,
                 dataToEncode
               )}
             </div>
             <div>
-              Total CodeData{' '}
-              {getTotalNumberOfDataCodewords(
-                getMinimumQRVersion(dataToEncode, qrErrorLevel) || 1,
-                qrErrorLevel
-              )}
+              Ger: {generatorPolynomial.map(a => {return "["+a+"]"})}
             </div>
             <div>
-              {getInitialBits(dataToEncode, qrErrorLevel)}
+              Mensagem:
+              <pre>
+                {messageGroups.map((group, i) => `  Group${i+1}:\n${group.map((block, j) => `     Block${j+1}:\n        ${block}`)}\n`)}
+              </pre>
+            </div>
+            <div>
+              EcCodeWords:
+              <pre>
+                {ecGroups.map((group, i) => `  Group${i+1}:\n${group.map((block, j) => `     Block${j+1}:\n        ${block}`)}\n`)}
+              </pre>
             </div>
           </div>
         </div>
