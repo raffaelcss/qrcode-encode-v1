@@ -1,6 +1,5 @@
 import { ErrorCorrectionType } from "@/types/errorCorrection-type";
-import { determineQREncodeMode } from "../determineQREncodeMode";
-import { getInitialBits } from "../getInitialBits";
+import { getInitialBits } from "./getInitialBits";
 
 export function getMessagePolynomial(text: string, qrErrorLevel: ErrorCorrectionType){
   const encodedText = [...getInitialBits(text, qrErrorLevel)];

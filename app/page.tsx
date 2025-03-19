@@ -2,10 +2,10 @@
 import QrCodeComponent from '@/components/qrcode/page'
 import { ErrorCorrectionType } from '@/types/errorCorrection-type'
 import { QREncodeModeType } from '@/types/qrMode-type'
-import { determineQREncodeMode } from '@/utils/determineQREncodeMode'
+import { getQREncodeMode } from '@/utils/getQREncodeMode'
 import { getHeaderBits } from '@/utils/getInitialBits'
 import { getMinimumQRVersion } from '@/utils/getMinimumQRVersion'
-import { getErrorCorrectionCodewords } from '@/utils/extras/getLongDivisionMod'
+import { getErrorCorrectionCodewordsInBlocks } from '@/utils/getErrorCorrectionCodewords'
 import {
   FormControl,
   InputLabel,
@@ -16,9 +16,11 @@ import {
 } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { divideCodewordsInBlocks } from '@/utils/extras/divideCodewordsInBlocks'
-import { getGeneratorPolynomial } from '@/utils/extras/getGeneratorPolynomial'
-import { getMessagePolynomial } from '@/utils/extras/getMessagePolynomial'
+import { getGeneratorPolynomial } from '@/utils/getGeneratorPolynomial'
+import { getMessagePolynomial } from '@/utils/getMessagePolynomial'
 import { getEcCodewordsPerBlock } from '@/utils/extras/blockInformations'
+import { getOrganizedCodeWords } from '@/utils/extras/organizeGroups'
+import { getFinalDataInBits } from '@/utils/getFinalDataInBits'
 
 export default function Home() {
   const [encodeMode, setEncodeMode] = useState(QREncodeModeType.BYTE)
@@ -26,6 +28,8 @@ export default function Home() {
   const [qrErrorLevel, setQrErrorLevel] = useState(ErrorCorrectionType.M)
   const [dataMaskPattern, setDataMaskPattern] = useState(6)
   const [dataToEncode, setDataToEncode] = useState('HELLO WORLD')
+  const [colored, setColored] = useState(true);
+  const [tempData, setTempData] = useState<number[]>([]);
 
   const handleChange = (event: SelectChangeEvent) => {
     setQrErrorLevel(parseInt(event.target.value))
@@ -34,24 +38,30 @@ export default function Home() {
   useEffect(() => {
     //Seleciona versão
     setQrVersion(getMinimumQRVersion(dataToEncode, qrErrorLevel));
-    setEncodeMode(determineQREncodeMode(dataToEncode));
-  },[dataToEncode]);
+    setEncodeMode(getQREncodeMode(dataToEncode));
+  },[dataToEncode, qrErrorLevel]);
+
+  useEffect(() => {
+    const tempo = setInterval(() => {
+      setTempData((value) => [...value, finalDataInBits.shift()])
+    }, 400)
+
+    return () => clearInterval(tempo);
+  }, [])
 
   const messagePolynomial = getMessagePolynomial(dataToEncode, qrErrorLevel);
   const numErrorCorrectionCodewords = getEcCodewordsPerBlock(qrVersion, qrErrorLevel);
   const generatorPolynomial = getGeneratorPolynomial(numErrorCorrectionCodewords);
   
   const messageGroups = divideCodewordsInBlocks(qrVersion, qrErrorLevel, messagePolynomial);
+  const ecGroups = [] = getErrorCorrectionCodewordsInBlocks(messageGroups, generatorPolynomial, numErrorCorrectionCodewords);
 
-  const ecGroups: number[][][] = [];
-  messageGroups.forEach(group => {
-    const ecGroup: number[][] = [];
-    group.forEach(block => {
-      const ecBlock = getErrorCorrectionCodewords(block, generatorPolynomial, numErrorCorrectionCodewords)
-      ecGroup.push(ecBlock);
-    })
-    ecGroups.push(ecGroup);
-  })
+  const organizedMessageGroups = getOrganizedCodeWords(qrVersion, qrErrorLevel, messageGroups);
+  const organizedEcGroups = getOrganizedCodeWords(qrVersion, qrErrorLevel, ecGroups);
+
+  const finalDataInBits = getFinalDataInBits(qrVersion, organizedMessageGroups, organizedEcGroups);
+
+
   return (
     <div className="flex h-screen w-screen justify-center overflow-auto bg-slate-800">
       <div className="flex w-screen items-center justify-evenly gap-4 bg-slate-200">
@@ -136,9 +146,9 @@ export default function Home() {
                 dataToEncode
               )}
             </div>
-            <div>
+            {/* <div>
               Ger: {generatorPolynomial.map(a => {return "["+a+"]"})}
-            </div>
+            </div> */}
             <div>
               Mensagem:
               <pre>
@@ -155,11 +165,12 @@ export default function Home() {
         </div>
         <div className="flex size-[36rem] items-center justify-center p-4">
           <QrCodeComponent
-            encodeMode={encodeMode}
+            bordered={false}
             qrVersion={qrVersion}
             errorLevel={qrErrorLevel}
             dataMaskPattern={dataMaskPattern}
-            dataToEncode={dataToEncode}
+            finalData={tempData}
+            colored={true}
           />
         </div>
       </div>

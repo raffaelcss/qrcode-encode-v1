@@ -6,7 +6,7 @@ function etapa(generatorPolynomial: number[], lastXOR: number[]){
     const alfaLastXOR = lastXOR.map((term) => logTable[term])
   
     //Pega o principal termo do lastXOR
-    let mainTermLastXOR = alfaLastXOR[0];
+    const mainTermLastXOR = alfaLastXOR[0];
 
     //Multiplica o polinomio gerador pelo termo
     let a1 = alfaGeneratorPolynomial.map(term => {
@@ -27,7 +27,7 @@ function etapa(generatorPolynomial: number[], lastXOR: number[]){
 }
 
 
-export function getErrorCorrectionCodewords(
+function getErrorCorrectionCodewords(
   messagePolynomial: number[],
   generatorPolynomial: number[],
   qtdECCodeWords: number
@@ -48,7 +48,24 @@ export function getErrorCorrectionCodewords(
   for (let i=0; i < dif; i++){
     result.pop();
   }
-  console.log(result);
 
   return result;
+}
+
+export function getErrorCorrectionCodewordsInBlocks(
+  messageGroups: number[][][],
+  generatorPolynomial: number[],
+  numErrorCorrectionCodewords: number
+): number[][][] {
+  const ecGroups: number[][][] = [];
+  messageGroups.forEach(group => {
+    const ecGroup: number[][] = [];
+    group.forEach(block => {
+      const ecBlock = getErrorCorrectionCodewords(block, generatorPolynomial, numErrorCorrectionCodewords)
+      ecGroup.push(ecBlock);
+    })
+    ecGroups.push(ecGroup);
+  });
+
+  return ecGroups;
 }

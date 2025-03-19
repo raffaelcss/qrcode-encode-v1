@@ -1,7 +1,7 @@
 import { QREncodeModeType } from "@/types/qrMode-type"
 import { decimalToBitsArray } from "./extras/decimalToBitsArray"
 import { getQtdBitsCharacterCount } from "./getQtdBitsCharacterCount"
-import { determineQREncodeMode } from "./determineQREncodeMode";
+import { getQREncodeMode } from "./getQREncodeMode";
 import { getMinimumQRVersion } from "./getMinimumQRVersion";
 import { ErrorCorrectionType } from "@/types/errorCorrection-type";
 import { encodeNumericMode } from "./encoders/encodeNumericMode";
@@ -49,7 +49,7 @@ export function encodeText(text: string, qrEncodeMode: QREncodeModeType){
 
 export function getInitialBits(text: string, qrErrorLevel: ErrorCorrectionType): number[] {
   const version = getMinimumQRVersion(text, qrErrorLevel);
-  const qrEncodeMode = determineQREncodeMode(text);
+  const qrEncodeMode = getQREncodeMode(text);
   const headerBits = getHeaderBits(version || 1, qrEncodeMode, text);
   const qtdFinalBits = getTotalNumberOfDataCodewords(version, qrErrorLevel) * 8;
 

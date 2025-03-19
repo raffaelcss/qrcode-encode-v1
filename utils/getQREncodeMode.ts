@@ -1,6 +1,6 @@
 import { QREncodeModeType } from "@/types/qrMode-type";
 
-export function determineQREncodeMode(text: string): QREncodeModeType {
+export function getQREncodeMode(text: string): QREncodeModeType {
   const alphanumericTable = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
   // Check numeric mode

@@ -1,5 +1,5 @@
 import { QRCapacitiesType } from "@/types/qrCapacities-type";
-import { determineQREncodeMode } from "./determineQREncodeMode";
+import { getQREncodeMode } from "./getQREncodeMode";
 import { ErrorCorrectionType } from "@/types/errorCorrection-type";
 
 //L = 1
@@ -50,7 +50,7 @@ const QRCapacities: QRCapacitiesType[] = [
 ];
 
 export function getMinimumQRVersion(text: string, errorLevel: ErrorCorrectionType): number {
-  const mode = determineQREncodeMode(text);
+  const mode = getQREncodeMode(text);
 
   const allCapacities = [...QRCapacities];
 
