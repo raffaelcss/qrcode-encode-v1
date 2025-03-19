@@ -41,13 +41,13 @@ export default function Home() {
     setEncodeMode(getQREncodeMode(dataToEncode));
   },[dataToEncode, qrErrorLevel]);
 
-  useEffect(() => {
-    const tempo = setInterval(() => {
-      setTempData((value) => [...value, finalDataInBits.shift()])
-    }, 400)
+  // useEffect(() => {
+  //   const tempo = setInterval(() => {
+  //     setTempData((value) => [...value, finalDataInBits.shift()])
+  //   }, 400)
 
-    return () => clearInterval(tempo);
-  }, [])
+  //   return () => clearInterval(tempo);
+  // }, [])
 
   const messagePolynomial = getMessagePolynomial(dataToEncode, qrErrorLevel);
   const numErrorCorrectionCodewords = getEcCodewordsPerBlock(qrVersion, qrErrorLevel);
@@ -169,7 +169,7 @@ export default function Home() {
             qrVersion={qrVersion}
             errorLevel={qrErrorLevel}
             dataMaskPattern={dataMaskPattern}
-            finalData={tempData}
+            finalData={finalDataInBits}
             colored={true}
           />
         </div>
