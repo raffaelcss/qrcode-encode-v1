@@ -84,34 +84,34 @@ function arrayDeepCopy(array: number[][]): number[][] {
 
 function getBitColor(bit: number): string{
   let color = bit == 0
-  ? 'white'
+  ? 'bg-white'
   : bit == 1
-  ? 'black text-white'
+  ? 'bg-black text-white'
   : bit == -2
-  ? 'red-100'
+  ? 'bg-red-100'
   : bit == 2
-  ? 'red-700 text-white'
+  ? 'bg-red-700 text-white'
   : bit == -3
-  ? 'blue-100'
+  ? 'bg-blue-100'
   : bit == 3
-  ? 'blue-700 text-white'
+  ? 'bg-blue-700 text-white'
   : bit == -4
-  ? 'green-100'
+  ? 'bg-green-100'
   : bit == 4
-  ? 'green-700 text-white'
+  ? 'bg-green-700 text-white'
   : bit == -5
-  ? 'orange-100'
+  ? 'bg-orange-100'
   : bit == 5
-  ? 'orange-500 text-white'
+  ? 'bg-orange-500 text-white'
   : bit == -6
-  ? 'pink-100'
+  ? 'bg-pink-100'
   : bit == 6
-  ? 'pink-500 text-white'
+  ? 'bg-pink-500 text-white'
   : bit == -7
-  ? 'yellow-100'
+  ? 'bg-yellow-100'
   : bit == 7
-  ? 'yellow-700 text-white'
-  : 'slate-400'
+  ? 'bg-yellow-700 text-white'
+  : 'bg-slate-400'
 
   return color
 }
