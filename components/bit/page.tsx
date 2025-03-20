@@ -11,7 +11,7 @@ export default function BitComponent(props: BitComponentProps) {
 
   const { selectedGroup, bordered, numered, colored, setSelectedGroup } = useQrContext()
 
-  let color = colored ? twColor : (bit <=0 ? "white" : "black text-white")
+  let color = colored ? twColor : (bit <=0 ? "bg-white" : "bg-black text-white")
 
   return (
     <div
