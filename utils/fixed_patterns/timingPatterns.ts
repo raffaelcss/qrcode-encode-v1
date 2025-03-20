@@ -15,4 +15,5 @@ export function timingPatterns(data: number[][], qrVersion: number) {
     const bit = (i + 1) % 2
     data[i][patternPosition] = bit * color || -color
   }
+  return data;
 }

@@ -1,19 +1,19 @@
-import { getQRCodeSize } from "@/utils/extras/getQRCodeSize"
-import { alignmentsPatterns } from "@/utils/fixed_patterns/alignmentsPatterns"
-import { findPatterns } from "@/utils/fixed_patterns/findPatterns"
-import { formatInformation } from "@/utils/fixed_patterns/formatInformation"
-import { timingPatterns } from "@/utils/fixed_patterns/timingPatterns"
-import { versionInformation } from "@/utils/fixed_patterns/versionInformation"
-import { mask } from "@/utils/snake_and_mask/mask"
-import { snake } from "@/utils/snake_and_mask/snake"
+import { getQRCodeSize } from '@/utils/extras/getQRCodeSize'
+import { alignmentsPatterns } from '@/utils/fixed_patterns/alignmentsPatterns'
+import { findPatterns } from '@/utils/fixed_patterns/findPatterns'
+import { formatInformation } from '@/utils/fixed_patterns/formatInformation'
+import { timingPatterns } from '@/utils/fixed_patterns/timingPatterns'
+import { versionInformation } from '@/utils/fixed_patterns/versionInformation'
+import { mask } from '@/utils/snake_and_mask/mask'
+import { snake } from '@/utils/snake_and_mask/snake'
+import BitComponent from '../bit/page'
+import { useQrContext } from '@/context/QrBitContext'
 
 interface QrCodeComponentProps {
   qrVersion: number
   errorLevel: number
   dataMaskPattern: number
   finalData: number[]
-  colored: boolean
-  bordered: boolean
 }
 
 /*****************************************/
@@ -82,32 +82,50 @@ function arrayDeepCopy(array: number[][]): number[][] {
   return array.map((row) => [...row]) // Copia cada linha do array
 }
 
-/*****************************************/
-/*                                       */
-/*        Padrões fixos                  */
-/*                                       */
-/*****************************************/
+function getBitColor(bit: number): string{
+  let color = bit == 0
+  ? 'white'
+  : bit == 1
+  ? 'black text-white'
+  : bit == -2
+  ? 'red-100'
+  : bit == 2
+  ? 'red-700 text-white'
+  : bit == -3
+  ? 'blue-100'
+  : bit == 3
+  ? 'blue-700 text-white'
+  : bit == -4
+  ? 'green-100'
+  : bit == 4
+  ? 'green-700 text-white'
+  : bit == -5
+  ? 'orange-100'
+  : bit == 5
+  ? 'orange-500 text-white'
+  : bit == -6
+  ? 'pink-100'
+  : bit == 6
+  ? 'pink-500 text-white'
+  : bit == -7
+  ? 'yellow-100'
+  : bit == 7
+  ? 'yellow-700 text-white'
+  : 'slate-400'
 
-/*****************************************/
-/*                                       */
-/* Padrões de informações e versão       */
-/*                                       */
-/*****************************************/
-
-/*****************************************/
-/*                                       */
-/* ECI Header                            */
-/*                                       */
-/*****************************************/
-
-/*****************************************/
-/*                                       */
-/* Dados e correção                      */
-/*                                       */
-/*****************************************/
+  return color
+}
 
 export default function QrCodeComponent(props: QrCodeComponentProps) {
-  const { bordered, qrVersion, errorLevel, dataMaskPattern, finalData, colored } = props
+  const {
+    qrVersion,
+    errorLevel,
+    dataMaskPattern,
+    finalData,
+  } = props
+
+  const { masked } = useQrContext()
+
   const size = getQRCodeSize(qrVersion)
 
   // [x][y] De cima pra baixo da esquerda pra direita
@@ -126,64 +144,22 @@ export default function QrCodeComponent(props: QrCodeComponentProps) {
 
   const fix = arrayDeepCopy(data)
   snake(data, qrVersion, finalData)
-  // mask(data, fix, dataMaskPattern)
-
-  if (!colored) {
-    data = data.map(col => col.map(bit => {
-      if (bit <= 0) return 0
-      else return 1
-    }))
-  }
+  if (masked)
+    mask(data, fix, dataMaskPattern)
 
   return (
     <div id="qr-code" className="flex size-[32rem] bg-white">
-      <div className="quiet-zone flex-[4_4_0%]"/>
+      <div className="quiet-zone flex-[4_4_0%]" />
       {data.map((col, i) => (
         <div key={i} className="flex flex-1 flex-col text-[8px]">
-          <div className="quiet-zone flex-[4_4_0%]"/>
+          <div className="quiet-zone flex-[4_4_0%]" />
           {col.map((bit, j) => (
-            <div
-              className={`flex-1 text-center ${bordered ? "border" : ""} ${
-                bit == 0
-                ? 'bg-white'
-                : bit == 1
-                ? 'bg-black text-white'
-                : bit == -2
-                ? 'bg-red-100'
-                : bit == 2
-                ? 'bg-red-700 text-white'
-                : bit == -3
-                ? 'bg-blue-100'
-                : bit == 3
-                ? 'bg-blue-700 text-white'
-                : bit == -4
-                ? 'bg-green-100'
-                : bit == 4
-                ? 'bg-green-700 text-white'
-                : bit == -5
-                ? 'bg-orange-100'
-                : bit == 5
-                ? 'bg-orange-500 text-white'
-                : bit == -6
-                ? 'bg-pink-100'
-                : bit == 6
-                ? 'bg-pink-500 text-white'
-                : bit == -7
-                ? 'bg-yellow-100'
-                : bit == 7
-                ? 'bg-yellow-700 text-white'
-
-                : 'bg-slate-400'
-              }`}
-              key={j}
-            >
-              {bit}
-            </div>
+            <BitComponent bit={bit} twColor={getBitColor(bit)} group={(getBitColor(Math.abs(bit) || 1))} key={j} />
           ))}
-          <div className="quiet-zone flex-[4_4_0%]"/>
+          <div className="quiet-zone flex-[4_4_0%]" />
         </div>
       ))}
-      <div className="quiet-zone flex-[4_4_0%]"/>
+      <div className="quiet-zone flex-[4_4_0%]" />
     </div>
   )
 }
