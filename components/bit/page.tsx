@@ -15,7 +15,7 @@ export default function BitComponent(props: BitComponentProps) {
 
   return (
     <div
-      className={`qr-bit flex flex-1 cursor-pointer items-center justify-center ${(selectedGroup || group) != group ? 'opacity-25' : ''} ${bordered ? 'border' : ''} ${`bg-${color}`}`}
+      className={`qr-bit flex flex-1 cursor-pointer items-center justify-center ${(selectedGroup || group) != group ? 'opacity-25 ' : ''}${bordered ? 'border ' : ''}${`bg-${color}`}`}
       onMouseEnter={() => setSelectedGroup(group)}
       onMouseLeave={() => setSelectedGroup('')}
     >
